@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Automation Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .vnc-iframe {
+            width: 100%;
+            height: calc(100vh - 200px);
+            border: none;
+            border-radius: 0.5rem;
+            transform: scale(0.8);
+            transform-origin: 0 0;
+        }
+        #vncContainer {
+            overflow: hidden;
+            height: calc(100vh - 200px);
+        }
+    </style>
+</head>
+<body class="h-full bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-full">
+        <nav class="bg-white shadow-sm">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between">
+                    <div class="flex">
+                        <div class="flex flex-shrink-0 items-center">
+                            <svg class="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span class="ml-2 text-xl font-semibold text-gray-900">Browser Automation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="py-10">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Controls Panel -->
+                    <div class="bg-white shadow sm:rounded-lg lg:col-span-1">
+                        <div class="px-4 py-5 sm:p-6">
+                            <form id="taskForm" class="space-y-6">
+                                <div>
+                                    <label for="apiKey" class="block text-sm font-medium text-gray-700">OpenAI API Key</label>
+                                    <div class="mt-1">
+                                        <input type="password" id="apiKey" name="apiKey" required
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                            placeholder="sk-...">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="task" class="block text-sm font-medium text-gray-700">Task Description</label>
+                                    <div class="mt-1">
+                                        <textarea id="task" name="task" rows="4" required
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                            placeholder="Example: Search for the cheapest guitar on amazon"></textarea>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <button type="submit"
+                                        class="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                        Run Task
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Loading Spinner -->
+                            <div id="loading" class="hidden">
+                                <div class="mt-6 flex justify-center">
+                                    <div class="inline-flex items-center px-4 py-2 space-x-3">
+                                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                                        <span class="text-sm text-gray-600">Running task...</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Results Section -->
+                            <div id="results" class="hidden mt-6">
+                                <div class="rounded-md bg-gray-50 px-6 py-5">
+                                    <h3 class="text-sm font-medium text-gray-900">Results</h3>
+                                    <div id="resultContent" class="mt-2 text-sm text-gray-500 whitespace-pre-wrap"></div>
+                                </div>
+                            </div>
+
+                            <!-- Error Message -->
+                            <div id="error" class="hidden mt-6 rounded-md bg-red-50 p-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-red-800">Error</h3>
+                                        <div class="mt-2 text-sm text-red-700"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Browser View Panel -->
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden lg:col-span-2">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h2 class="text-lg font-medium text-gray-900 mb-4">Browser View</h2>
+                            <div id="vncContainer" data-connected="false">
+                                <iframe
+                                    src="http://localhost:6080/vnc.html?autoconnect=true&password=password"
+                                    class="vnc-iframe"
+                                    allow="clipboard-read; clipboard-write"
+                                ></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const apiKey = document.getElementById('apiKey').value;
+            const task = document.getElementById('task').value;
+
+            // Show loading, hide other sections
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/run-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ api_key: apiKey, task: task })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'An error occurred');
+                }
+
+                // Show results
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('resultContent').textContent = data.result;
+            } catch (error) {
+                // Show error
+                const errorDiv = document.getElementById('error');
+                errorDiv.classList.remove('hidden');
+                errorDiv.querySelector('.text-red-700').textContent = error.message;
+            } finally {
+                // Hide loading
+                document.getElementById('loading').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
